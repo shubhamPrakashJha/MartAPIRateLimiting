@@ -1,10 +1,12 @@
 from redis import Redis
+redis = Redis()
+
 import time
 from functools import update_wrapper
 from flask import request, g
 from flask import Flask, jsonify
-from models import Base, Item
 
+from models import Base, Item
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from sqlalchemy import create_engine
@@ -18,7 +20,6 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app = Flask(__name__)
 
-redis = Redis()
 
 
 # ADD RATE LIMITING CODE HERE
