@@ -23,6 +23,12 @@ app = Flask(__name__)
 
 
 # ADD RATE LIMITING CODE HERE
+class RateLimit(object):
+	expiration_window = 10 	# give key extra 10s to expire in redis so that
+							# badly sync clocks b/w worker and redis server
+							#  do not cause any problems
+
+
 @app.route('/rate-limited')
 def index():
 	return jsonify(
