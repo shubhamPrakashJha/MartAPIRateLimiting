@@ -18,7 +18,7 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 app = Flask(__name__)
 
-app = Flask(__name__)
+redis = Redis()
 
 
 # ADD RATE LIMITING CODE HERE
