@@ -27,6 +27,8 @@ class RateLimit(object):
 	expiration_window = 10 	# give key extra 10s to expire in redis so that
 							# badly sync clocks b/w worker and redis server
 							#  do not cause any problems
+	def __init__(self, key_prefix, limit, per, send_x_headers):
+		return "Constructor for class Rate Linit"
 
 
 @app.route('/rate-limited')
