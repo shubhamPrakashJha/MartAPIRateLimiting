@@ -22,7 +22,11 @@ app = Flask(__name__)
 
 
 # ADD RATE LIMITING CODE HERE
-
+@app.route('/rate-limited')
+def index():
+	return jsonify(
+		{'response': 'This is a Rate limited response'}
+	)
 
 
 @app.route('/catalog')
@@ -31,23 +35,28 @@ def getCatalog():
 
 	# Populate an empty database
 	if items == []:
-		item1 = Item(name="Pineapple", price="$2.50",
+		item1 = Item(name="Pineapple",
+					 price="$2.50",
 					 picture="https://upload.wikimedia.org/wikipedia/commons/c/cb/Pineapple_and_cross_section.jpg",
 					 description="Organically Grown in Hawai'i")
 		session.add(item1)
-		item2 = Item(name="Carrots", price="$1.99",
+		item2 = Item(name="Carrots",
+					 price="$1.99",
 					 picture="http://media.mercola.com/assets/images/food-facts/carrot-fb.jpg",
 					 description="High in Vitamin A")
 		session.add(item2)
-		item3 = Item(name="Aluminum Foil", price="$3.50",
+		item3 = Item(name="Aluminum Foil",
+					 price="$3.50",
 					 picture="http://images.wisegeek.com/aluminum-foil.jpg",
 					 description="300 feet long")
 		session.add(item3)
-		item4 = Item(name="Eggs", price="$2.00",
+		item4 = Item(name="Eggs",
+					 price="$2.00",
 					 picture="http://whatsyourdeal.com/grocery-coupons/wp-content/uploads/2015/01/eggs.png",
 					 description="Farm Fresh Organic Eggs")
 		session.add(item4)
-		item5 = Item(name="Bananas", price="$2.15",
+		item5 = Item(name="Bananas",
+					 price="$2.15",
 					 picture="http://dreamatico.com/data_images/banana/banana-3.jpg",
 					 description="Fresh, delicious, and full of potassium")
 		session.add(item5)
