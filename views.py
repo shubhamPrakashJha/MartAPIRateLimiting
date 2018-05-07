@@ -31,10 +31,12 @@ class RateLimit(object):
 	def __init__(self, key_prefix, limit, per, send_x_headers):
 		# timestamp to indicate when a request limit can reset itself then
 		# append this to my key
-		self.reset = (int(time.time()) // per) * per + per
+		self.reset = (int(time.time()) // per) * per + per # current time + 30
+		print self.reset
 		# key(string) used to keep track of rate limit from each of d
 		# requests
 		self.key = key_prefix + str(self.reset)
+		print self.key
 		# limit and per defines no. of requests allowed over a time period.
 		self.limit = limit
 		self.per = per
@@ -42,6 +44,7 @@ class RateLimit(object):
 		# header the no. of remaining requests a client can make before
 		# they hit the limit
 		self.send_x_headers  = send_x_headers
+		print send_x_headers
 		# use pipeline to ensure we never increment a key without also
 		# setting the key expiration in case exception happens b/w those lines
 		# ex: if a process is killed
@@ -56,6 +59,16 @@ class RateLimit(object):
 	remaining = property(lambda x: x.limit - x.current)
 	# returns true if client hit their rate limit
 	over_limit = property(lambda x: x.current >= x.limit)
+
+def get_view_rate_limit():
+	'''retrieve the view rate limit from g object to use this func later 
+	inside my decorator'''
+	return getattr(g, '_view_rate_limit', None)
+
+def on_over_limit(limit):
+	'''returns that a client has reached their limit of requests'''
+	return jsonify({'data': 'You hit the rate limit', 'error': '429'}), 429
+
 
 
 @app.route('/rate-limited')
