@@ -97,13 +97,28 @@ def ratelimit(limit,
 		return update_wrapper(rate_limited, f)
 	return decorator
 
-
-
+@app.after_request
+def inject_x_rate_headers(response):
+	'''append the no. of remaining requests, the limit for that endpoint 
+	and the time until the limit resets itself
+	inside the header of each response that hists the rate limited requests
+	this feature can be turned off if send_x_headers is set t false 
+	whenever the rate limit decorator is called'''
+	limit = get_view_rate_limit()
+	if limit and limit.send_x_headers:
+		h = response.headers
+		h.add('X-RateLimit-Remaining', str(limit.remaining))
+		h.add('X-RateLimit-Limit', str(limit.limit))
+		h.add('X-RateLimit-Reset', str(limit.reset))
+	return response
 
 
 
 
 @app.route('/rate-limited')
+# add ratelimit decorator to my route
+@ratelimit(limit=300, per=30 * 1)
+# allow 300 requests per 30 sec
 def index():
 	return jsonify(
 		{'response': 'This is a Rate limited response'}
