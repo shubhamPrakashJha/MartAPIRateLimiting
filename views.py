@@ -32,19 +32,20 @@ class RateLimit(object):
 		# timestamp to indicate when a request limit can reset itself then
 		# append this to my key
 		self.reset = (int(time.time()) // per) * per + per # current time + 30
-		print self.reset
+		print time.time()
+		print "reset: %s" %self.reset
 		# key(string) used to keep track of rate limit from each of d
 		# requests
 		self.key = key_prefix + str(self.reset)
-		print self.key
+		print "key: %s" % self.key
 		# limit and per defines no. of requests allowed over a time period.
 		self.limit = limit
 		self.per = per
 		# send_x_header(boolean option) allows to inject to each response
 		# header the no. of remaining requests a client can make before
 		# they hit the limit
-		self.send_x_headers  = send_x_headers
-		print send_x_headers
+		self.send_x_headers = send_x_headers
+		print "send_x_headers: %s" % send_x_headers
 		# use pipeline to ensure we never increment a key without also
 		# setting the key expiration in case exception happens b/w those lines
 		# ex: if a process is killed
@@ -60,10 +61,12 @@ class RateLimit(object):
 	# returns true if client hit their rate limit
 	over_limit = property(lambda x: x.current >= x.limit)
 
+
 def get_view_rate_limit():
 	'''retrieve the view rate limit from g object to use this func later 
 	inside my decorator'''
 	return getattr(g, '_view_rate_limit', None)
+
 
 def on_over_limit(limit):
 	'''returns that a client has reached their limit of requests'''
@@ -79,6 +82,7 @@ def ratelimit(limit,
 	'''create a rate limit method that will wrap around my decorator taking 
 	in the following values as arguments
 	'''
+
 	def decorator(f):
 		def rate_limited(*args, **kwargs):
 			# key: key is constructed by default from the remote address and current
@@ -94,8 +98,11 @@ def ratelimit(limit,
 			if over_limit is not None and rlimit.over_limit:
 				return over_limit(rlimit)
 			return f(*args, **kwargs)
+
 		return update_wrapper(rate_limited, f)
+
 	return decorator
+
 
 @app.after_request
 def inject_x_rate_headers(response):
@@ -113,12 +120,10 @@ def inject_x_rate_headers(response):
 	return response
 
 
-
-
 @app.route('/rate-limited')
 # add ratelimit decorator to my route
-@ratelimit(limit=300, per=30 * 1)
-# allow 300 requests per 30 sec
+@ratelimit(limit=60, per=60 * 1)
+# allow 60 requests per 60 sec
 def index():
 	return jsonify(
 		{'response': 'This is a Rate limited response'}
@@ -126,6 +131,7 @@ def index():
 
 
 @app.route('/catalog')
+@ratelimit(limit=60, per=60 * 1)
 def getCatalog():
 	items = session.query(Item).all()
 
