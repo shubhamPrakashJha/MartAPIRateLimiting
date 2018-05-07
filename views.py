@@ -70,6 +70,38 @@ def on_over_limit(limit):
 	return jsonify({'data': 'You hit the rate limit', 'error': '429'}), 429
 
 
+def ratelimit(limit,
+			  per=300,
+			  send_x_headers=True,
+			  over_limit=on_over_limit,
+			  scope_func=lambda: request.remote_addr,
+			  key_func=lambda: request.endpoint):
+	'''create a rate limit method that will wrap around my decorator taking 
+	in the following values as arguments
+	'''
+	def decorator(f):
+		def rate_limited(*args, **kwargs):
+			# key: key is constructed by default from the remote address and current
+			# endpoint
+			key = 'rate-limit/%s/%s' % (key_func(), scope_func())
+			# before the func is executed it increments the rate limit with
+			#  the help of rate limit class
+			rlimit = RateLimit(key, limit, per, send_x_headers)
+			# and stores an instance on the G object as g._view_rate_limit
+			g._view_rate_limit = rlimit
+			# if the view func is over the limit we automatically call a
+			# diff func instead
+			if over_limit is not None and rlimit.over_limit:
+				return over_limit(rlimit)
+			return f(*args, **kwargs)
+		return update_wrapper(rate_limited, f)
+	return decorator
+
+
+
+
+
+
 
 @app.route('/rate-limited')
 def index():
