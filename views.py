@@ -1,4 +1,5 @@
 from redis import Redis
+
 redis = Redis()
 
 import time
@@ -21,14 +22,40 @@ session = DBSession()
 app = Flask(__name__)
 
 
-
 # ADD RATE LIMITING CODE HERE
 class RateLimit(object):
-	expiration_window = 10 	# give key extra 10s to expire in redis so that
-							# badly sync clocks b/w worker and redis server
-							#  do not cause any problems
+	expiration_window = 10  # give key extra 10s to expire in redis so that
+
+	# badly sync clocks b/w worker and redis server
+	#  do not cause any problems
 	def __init__(self, key_prefix, limit, per, send_x_headers):
-		return "Constructor for class Rate Linit"
+		# timestamp to indicate when a request limit can reset itself then
+		# append this to my key
+		self.reset = (int(time.time()) // per) * per + per
+		# key(string) used to keep track of rate limit from each of d
+		# requests
+		self.key = key_prefix + str(self.reset)
+		# limit and per defines no. of requests allowed over a time period.
+		self.limit = limit
+		self.per = per
+		# send_x_header(boolean option) allows to inject to each response
+		# header the no. of remaining requests a client can make before
+		# they hit the limit
+		self.send_x_headers  = send_x_headers
+		# use pipeline to ensure we never increment a key without also
+		# setting the key expiration in case exception happens b/w those lines
+		# ex: if a process is killed
+		p = redis.pipeline()
+		# now increment the value of pipeline
+		p.incr(self.key)
+		# & set it to expire based on the reset value and expiration window
+		p.expireat(self.key, self.reset + self.expiration_window)
+		self.current = min(p.execute()[0], limit)
+
+	# remaining request i have left
+	remaining = property(lambda x: x.limit - x.current)
+	# returns true if client hit their rate limit
+	over_limit = property(lambda x: x.current >= x.limit)
 
 
 @app.route('/rate-limited')
@@ -78,4 +105,3 @@ if __name__ == '__main__':
 	app.secret_key = 'super_secret_key'
 	app.debug = True
 	app.run(host='0.0.0.0', port=5000)
-
